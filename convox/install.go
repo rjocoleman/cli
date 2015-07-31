@@ -44,6 +44,12 @@ func init() {
 				Value: "t2.small",
 				Usage: "type of EC2 instances",
 			},
+			cli.StringFlag{
+				Name: "region",
+				Value: "us-east-1",
+				Usage: "aws region to install in",
+				EnvVar: "AWS_REGION",
+			},
 		},
 	})
 
@@ -157,7 +163,7 @@ func cmdInstall(c *cli.Context) {
 	password := randomString(30)
 
 	CloudFormation := cloudformation.New(&aws.Config{
-		Region:      "us-east-1",
+		Region:      c.String("region"),
 		Credentials: credentials.NewStaticCredentials(access, secret, ""),
 	})
 
@@ -276,7 +282,7 @@ func cmdUninstall(c *cli.Context) {
 	secret = strings.TrimSpace(secret)
 
 	CloudFormation := cloudformation.New(&aws.Config{
-		Region:      "us-east-1",
+		Region:      c.String("region"),
 		Credentials: credentials.NewStaticCredentials(access, secret, ""),
 	})
 
@@ -313,7 +319,7 @@ func cmdUninstall(c *cli.Context) {
 	fmt.Printf("Cleaning up registry...\n")
 
 	S3 := s3.New(&aws.Config{
-		Region:      "us-east-1",
+		Region:      c.String("region"),
 		Credentials: credentials.NewStaticCredentials(access, secret, ""),
 	})
 
