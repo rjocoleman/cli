@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/convox/cli",
-	"GoVersion": "go1.4.2 darwin/amd64",
+	"GoVersion": "go1.4.2",
 	"Packages": [
 		"./..."
 	],
@@ -57,7 +57,7 @@
 		},
 		{
 			"ImportPath": "github.com/briandowns/spinner",
-			"Rev": "afc9ce26eb6cd43caad9c86a3c4a56ae2a9f39d2"
+			"Rev": "07369a2abb5b8564c50fd48dc842714fb02b71be"
 		},
 		{
 			"ImportPath": "github.com/codegangsta/cli",
