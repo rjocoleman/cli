@@ -76,6 +76,11 @@
 			"Rev": "7e9078c250876f26da48aaf36b8dce6a462ecd8a"
 		},
 		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/sns",
+			"Comment": "v0.6.1-14-g7e9078c",
+			"Rev": "7e9078c250876f26da48aaf36b8dce6a462ecd8a"
+		},
+		{
 			"ImportPath": "github.com/briandowns/spinner",
 			"Rev": "07369a2abb5b8564c50fd48dc842714fb02b71be"
 		},
