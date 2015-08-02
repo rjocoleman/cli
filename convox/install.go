@@ -437,6 +437,49 @@ func cmdUninstall(c *cli.Context) {
 		return
 	}
 
+	// clean up lambda bridge
+	CloudFormationLambda := cloudformation.New(&aws.Config{
+		Region:      "us-east-1",
+		Credentials: credentials.NewStaticCredentials(access, secret, ""),
+	})
+
+	_, err = CloudFormationLambda.DeleteStack(&cloudformation.DeleteStackInput{
+		StackName: aws.String(stackName + "-Lambda"),
+	})
+
+	if err != nil {
+		handleError("uninstall", distinctId, err)
+		return
+	}
+
+	// clean up CustomTopic
+	SNS := sns.New(&aws.Config{
+		Region:      c.String("region"),
+		Credentials: credentials.NewStaticCredentials(access, secret, ""),
+	})
+
+	snsResp, err := SNS.ListTopics(&sns.ListTopicsInput{})
+
+	if err != nil {
+		handleError("uninstall", distinctId, err)
+		return
+	}
+
+	for _, r := range snsResp.Topics {
+		if strings.HasPrefix(*r.TopicARN, stackName + "-CustomTopic") {
+			customTopic := *r.TopicARN
+
+			_, err = SNS.DeleteTopic(&sns.DeleteTopicInput{
+				TopicARN: aws.String(customTopic),
+			})
+
+			if err != nil {
+				handleError("uninstall", distinctId, err)
+				return
+			}
+		}
+	}
+
 	if configuredHost, _ := currentHost(); configuredHost == host {
 		removeHost()
 	}
