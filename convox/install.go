@@ -630,9 +630,9 @@ func friendlyName(t string) string {
 		return "Routing Table"
 	case "AWS::EC2::SecurityGroup":
 		return "Security Group"
-	case "AWS::EC2::Subnet":
+	case "Custom::EC2Subnets":
 		return "VPC Subnet"
-	case "AWS::EC2::SubnetRouteTableAssociation":
+	case "Custom::EC2SubnetRouteTableAssociation":
 		return ""
 	case "AWS::EC2::VPC":
 		return "VPC"
@@ -666,6 +666,8 @@ func friendlyName(t string) string {
 		return "ECS Service"
 	case "Custom::S3BucketCleanup":
 		return ""
+	case "Custom::KMSKey":
+		return "KMS Key"
 	}
 
 	return fmt.Sprintf("Unknown: %s", t)
