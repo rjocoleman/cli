@@ -14,11 +14,14 @@ import (
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/s3"
+	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/sns"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/convox/cli/stdcli"
 )
 
+var FormationLambdaUrl = "http://convox.s3.amazonaws.com/release/latest/formation-lambda.json"
 var FormationUrl = "http://convox.s3.amazonaws.com/release/latest/formation.json"
 
 func init() {
@@ -35,19 +38,19 @@ func init() {
 				Usage: "create EC2 instances on dedicated hardware",
 			},
 			cli.IntFlag{
-				Name: "instance-count",
+				Name:  "instance-count",
 				Value: 3,
 				Usage: "number of EC2 instances",
 			},
 			cli.StringFlag{
-				Name: "instance-type",
+				Name:  "instance-type",
 				Value: "t2.small",
 				Usage: "type of EC2 instances",
 			},
 			cli.StringFlag{
-				Name: "region",
-				Value: "us-east-1",
-				Usage: "aws region to install in",
+				Name:   "region",
+				Value:  "us-east-1",
+				Usage:  "aws region to install in",
 				EnvVar: "AWS_REGION",
 			},
 		},
@@ -73,7 +76,7 @@ func cmdInstall(c *cli.Context) {
 
 	if c.Bool("dedicated") {
 		tenancy = "dedicated"
-		if strings.HasPrefix(instanceType, "t2")  {
+		if strings.HasPrefix(instanceType, "t2") {
 			stdcli.Error(fmt.Errorf("t2 instance types aren't supported in dedicated tenancy, please set --instance-type."))
 		}
 	}
@@ -162,6 +165,81 @@ func cmdInstall(c *cli.Context) {
 
 	password := randomString(30)
 
+	sendMixpanelEvent("convox-install-start")
+
+	// create the SNS topic (CustomTopic)
+	SNS := sns.New(&aws.Config{
+		Region:      c.String("region"),
+		Credentials: credentials.NewStaticCredentials(access, secret, ""),
+	})
+
+	snsResp, err := SNS.CreateTopic(&sns.CreateTopicInput{
+		Name: aws.String(stackName + "-CustomTopic"),
+	})
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+	customTopic := *snsResp.TopicARN
+
+	CloudFormationLambda := cloudformation.New(&aws.Config{
+		Region:      "us-east-1",
+		Credentials: credentials.NewStaticCredentials(access, secret, ""),
+	})
+
+	resLambda, err := CloudFormationLambda.CreateStack(&cloudformation.CreateStackInput{
+		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
+		Parameters: []*cloudformation.Parameter{
+			&cloudformation.Parameter{ParameterKey: aws.String("Version"), ParameterValue: aws.String(version)},
+		},
+		StackName:   aws.String(stackName + "-Lambda"),
+		TemplateURL: aws.String(FormationLambdaUrl),
+	})
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+
+	lambdaBridgeArn, err := waitForCompletion(*resLambda.StackID, CloudFormationLambda, false)
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+
+	Lambda := lambda.New(&aws.Config{
+		Region:      "us-east-1",
+		Credentials: credentials.NewStaticCredentials(access, secret, ""),
+	})
+
+	// do Lambda permissions
+	_, err = Lambda.AddPermission(&lambda.AddPermissionInput{
+		Action:       aws.String("lambda:invokeFunction"),
+		FunctionName: aws.String(lambdaBridgeArn),
+		StatementID:  aws.String("StatementID"),
+		Principal:    aws.String("sns.amazonaws.com"),
+		SourceARN:    aws.String(customTopic),
+	})
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+
+	// Subscribe Lambda to SNS
+	_, err = SNS.Subscribe(&sns.SubscribeInput{
+		Protocol: aws.String("lambda"),
+		TopicARN: aws.String(customTopic),
+		Endpoint: aws.String(lambdaBridgeArn),
+	})
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+
 	CloudFormation := cloudformation.New(&aws.Config{
 		Region:      c.String("region"),
 		Credentials: credentials.NewStaticCredentials(access, secret, ""),
@@ -178,6 +256,7 @@ func cmdInstall(c *cli.Context) {
 			&cloudformation.Parameter{ParameterKey: aws.String("Password"), ParameterValue: aws.String(password)},
 			&cloudformation.Parameter{ParameterKey: aws.String("Tenancy"), ParameterValue: aws.String(tenancy)},
 			&cloudformation.Parameter{ParameterKey: aws.String("Version"), ParameterValue: aws.String(version)},
+			&cloudformation.Parameter{ParameterKey: aws.String("CustomTopic"), ParameterValue: aws.String(customTopic)},
 		},
 		StackName:   aws.String(stackName),
 		TemplateURL: aws.String(FormationUrl),
@@ -187,8 +266,6 @@ func cmdInstall(c *cli.Context) {
 		handleError("install", distinctId, err)
 		return
 	}
-
-	sendMixpanelEvent("convox-install-start")
 
 	host, err := waitForCompletion(*res.StackID, CloudFormation, false)
 
@@ -412,7 +489,7 @@ func waitForCompletion(stack string, CloudFormation *cloudformation.CloudFormati
 			}
 
 			for _, o := range dres.Stacks[0].Outputs {
-				if *o.OutputKey == "Dashboard" {
+				if *o.OutputKey == "Dashboard" || *o.OutputKey == "lambdaBridgeArn" {
 					return *o.OutputValue, nil
 				}
 			}
