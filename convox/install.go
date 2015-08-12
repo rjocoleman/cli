@@ -14,10 +14,13 @@ import (
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/service/sns"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/convox/cli/stdcli"
 )
 
+var BootstrapUrl = "http://convox.s3.amazonaws.com/release/latest/bootstrap.json"
 var FormationUrl = "http://convox.s3.amazonaws.com/release/latest/formation.json"
 
 // https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region
@@ -104,9 +107,10 @@ func init() {
 
 func cmdInstall(c *cli.Context) {
 	region := c.String("region")
+	bootstrapRegion := region
 
 	if !lambdaRegions[region] {
-		stdcli.Error(fmt.Errorf("Convox is not currently supported in %s", region))
+		bootstrapRegion = "us-east-1"
 	}
 
 	tenancy := "default"
@@ -189,6 +193,76 @@ func cmdInstall(c *cli.Context) {
 
 	fmt.Println("Installing Convox...")
 
+	SNS := sns.New(&aws.Config{
+		Region:      region,
+		Credentials: credentials.NewStaticCredentials(access, secret, ""),
+	})
+
+	snsResp, err := SNS.CreateTopic(&sns.CreateTopicInput{
+		Name: aws.String(stackName + "-bootstrap"),
+	})
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+	bootstrapTopic := *snsResp.TopicARN
+
+	BootstrapCloudFormation := cloudformation.New(&aws.Config{
+		Region:      bootstrapRegion,
+		Credentials: credentials.NewStaticCredentials(access, secret, ""),
+	})
+
+	bres, err := BootstrapCloudFormation.CreateStack(&cloudformation.CreateStackInput{
+		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
+		Parameters: []*cloudformation.Parameter{
+			&cloudformation.Parameter{ParameterKey: aws.String("Version"), ParameterValue: aws.String(version)},
+		},
+		StackName:   aws.String(stackName + "-bootstrap"),
+		TemplateURL: aws.String(BootstrapUrl),
+	})
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+
+	bootstrap, err := waitForCompletion(*bres.StackID, BootstrapCloudFormation, false)
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+
+	Lambda := lambda.New(&aws.Config{
+		Region:      bootstrapRegion,
+		Credentials: credentials.NewStaticCredentials(access, secret, ""),
+	})
+
+	_, err = Lambda.AddPermission(&lambda.AddPermissionInput{
+		Action:       aws.String("lambda:invokeFunction"),
+		FunctionName: aws.String(bootstrap),
+		StatementID:  aws.String("StatementID"),
+		Principal:    aws.String("sns.amazonaws.com"),
+		SourceARN:    aws.String(bootstrapTopic),
+	})
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+
+	_, err = SNS.Subscribe(&sns.SubscribeInput{
+		Protocol: aws.String("lambda"),
+		TopicARN: aws.String(bootstrapTopic),
+		Endpoint: aws.String(bootstrap),
+	})
+
+	if err != nil {
+		handleError("install", distinctId, err)
+		return
+	}
+
 	access = strings.TrimSpace(access)
 	secret = strings.TrimSpace(secret)
 
@@ -210,6 +284,7 @@ func cmdInstall(c *cli.Context) {
 			&cloudformation.Parameter{ParameterKey: aws.String("Password"), ParameterValue: aws.String(password)},
 			&cloudformation.Parameter{ParameterKey: aws.String("Tenancy"), ParameterValue: aws.String(tenancy)},
 			&cloudformation.Parameter{ParameterKey: aws.String("Version"), ParameterValue: aws.String(version)},
+			&cloudformation.Parameter{ParameterKey: aws.String("CustomTopic"), ParameterValue: aws.String(bootstrapTopic)},
 		},
 		StackName:   aws.String(stackName),
 		TemplateURL: aws.String(FormationUrl),
@@ -418,7 +493,7 @@ func waitForCompletion(stack string, CloudFormation *cloudformation.CloudFormati
 			}
 
 			for _, o := range dres.Stacks[0].Outputs {
-				if *o.OutputKey == "Dashboard" {
+				if *o.OutputKey == "Dashboard" || *o.OutputKey == "Bootstrap" {
 					return *o.OutputValue, nil
 				}
 			}
@@ -527,9 +602,9 @@ func friendlyName(t string) string {
 		return "Routing Table"
 	case "AWS::EC2::SecurityGroup":
 		return "Security Group"
-	case "AWS::EC2::Subnet":
+	case "Custom::EC2Subnets":
 		return "VPC Subnet"
-	case "AWS::EC2::SubnetRouteTableAssociation":
+	case "Custom::EC2SubnetRouteTableAssociation":
 		return ""
 	case "AWS::EC2::VPC":
 		return "VPC"

@@ -1,4 +1,4 @@
-package restxml_test
+package restjson_test
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/internal/util"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/aws"
-	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/internal/protocol/restxml"
+	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/internal/protocol/restjson"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/internal/protocol/xml/xmlutil"
 	"github.com/convox/cli/Godeps/_workspace/src/github.com/aws/aws-sdk-go/internal/signer/v4"
 	"github.com/stretchr/testify/assert"
@@ -46,10 +46,10 @@ func NewOutputService1ProtocolTest(config *aws.Config) *OutputService1ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService1ProtocolTest{service}
 }
@@ -89,46 +89,11 @@ func (c *OutputService1ProtocolTest) OutputService1TestCaseOperation1(input *Out
 
 var opOutputService1TestCaseOperation1 *aws.Operation
 
-// OutputService1TestCaseOperation2Request generates a request for the OutputService1TestCaseOperation2 operation.
-func (c *OutputService1ProtocolTest) OutputService1TestCaseOperation2Request(input *OutputService1TestShapeOutputService1TestCaseOperation2Input) (req *aws.Request, output *OutputService1TestShapeOutputShape) {
-
-	if opOutputService1TestCaseOperation2 == nil {
-		opOutputService1TestCaseOperation2 = &aws.Operation{
-			Name: "OperationName",
-		}
-	}
-
-	if input == nil {
-		input = &OutputService1TestShapeOutputService1TestCaseOperation2Input{}
-	}
-
-	req = c.newRequest(opOutputService1TestCaseOperation2, input, output)
-	output = &OutputService1TestShapeOutputShape{}
-	req.Data = output
-	return
-}
-
-func (c *OutputService1ProtocolTest) OutputService1TestCaseOperation2(input *OutputService1TestShapeOutputService1TestCaseOperation2Input) (*OutputService1TestShapeOutputShape, error) {
-	req, out := c.OutputService1TestCaseOperation2Request(input)
-	err := req.Send()
-	return out, err
-}
-
-var opOutputService1TestCaseOperation2 *aws.Operation
-
 type OutputService1TestShapeOutputService1TestCaseOperation1Input struct {
 	metadataOutputService1TestShapeOutputService1TestCaseOperation1Input `json:"-" xml:"-"`
 }
 
 type metadataOutputService1TestShapeOutputService1TestCaseOperation1Input struct {
-	SDKShapeTraits bool `type:"structure"`
-}
-
-type OutputService1TestShapeOutputService1TestCaseOperation2Input struct {
-	metadataOutputService1TestShapeOutputService1TestCaseOperation2Input `json:"-" xml:"-"`
-}
-
-type metadataOutputService1TestShapeOutputService1TestCaseOperation2Input struct {
 	SDKShapeTraits bool `type:"structure"`
 }
 
@@ -147,11 +112,11 @@ type OutputService1TestShapeOutputShape struct {
 
 	Long *int64 `type:"long"`
 
-	Num *int64 `locationName:"FooNum" type:"integer"`
+	Num *int64 `type:"integer"`
+
+	Status *int64 `location:"statusCode" type:"integer"`
 
 	Str *string `type:"string"`
-
-	Timestamp *time.Time `type:"timestamp" timestampFormat:"iso8601"`
 
 	TrueBool *bool `type:"boolean"`
 
@@ -178,10 +143,10 @@ func NewOutputService2ProtocolTest(config *aws.Config) *OutputService2ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService2ProtocolTest{service}
 }
@@ -221,6 +186,16 @@ func (c *OutputService2ProtocolTest) OutputService2TestCaseOperation1(input *Out
 
 var opOutputService2TestCaseOperation1 *aws.Operation
 
+type OutputService2TestShapeBlobContainer struct {
+	Foo []byte `locationName:"foo" type:"blob"`
+
+	metadataOutputService2TestShapeBlobContainer `json:"-" xml:"-"`
+}
+
+type metadataOutputService2TestShapeBlobContainer struct {
+	SDKShapeTraits bool `type:"structure"`
+}
+
 type OutputService2TestShapeOutputService2TestCaseOperation1Input struct {
 	metadataOutputService2TestShapeOutputService2TestCaseOperation1Input `json:"-" xml:"-"`
 }
@@ -230,7 +205,9 @@ type metadataOutputService2TestShapeOutputService2TestCaseOperation1Input struct
 }
 
 type OutputService2TestShapeOutputShape struct {
-	Blob []byte `type:"blob"`
+	BlobMember []byte `type:"blob"`
+
+	StructMember *OutputService2TestShapeBlobContainer `type:"structure"`
 
 	metadataOutputService2TestShapeOutputShape `json:"-" xml:"-"`
 }
@@ -255,10 +232,10 @@ func NewOutputService3ProtocolTest(config *aws.Config) *OutputService3ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService3ProtocolTest{service}
 }
@@ -307,12 +284,24 @@ type metadataOutputService3TestShapeOutputService3TestCaseOperation1Input struct
 }
 
 type OutputService3TestShapeOutputShape struct {
-	ListMember []*string `type:"list"`
+	StructMember *OutputService3TestShapeTimeContainer `type:"structure"`
+
+	TimeMember *time.Time `type:"timestamp" timestampFormat:"unix"`
 
 	metadataOutputService3TestShapeOutputShape `json:"-" xml:"-"`
 }
 
 type metadataOutputService3TestShapeOutputShape struct {
+	SDKShapeTraits bool `type:"structure"`
+}
+
+type OutputService3TestShapeTimeContainer struct {
+	Foo *time.Time `locationName:"foo" type:"timestamp" timestampFormat:"unix"`
+
+	metadataOutputService3TestShapeTimeContainer `json:"-" xml:"-"`
+}
+
+type metadataOutputService3TestShapeTimeContainer struct {
 	SDKShapeTraits bool `type:"structure"`
 }
 
@@ -332,10 +321,10 @@ func NewOutputService4ProtocolTest(config *aws.Config) *OutputService4ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService4ProtocolTest{service}
 }
@@ -384,7 +373,7 @@ type metadataOutputService4TestShapeOutputService4TestCaseOperation1Input struct
 }
 
 type OutputService4TestShapeOutputShape struct {
-	ListMember []*string `locationNameList:"item" type:"list"`
+	ListMember []*string `type:"list"`
 
 	metadataOutputService4TestShapeOutputShape `json:"-" xml:"-"`
 }
@@ -409,10 +398,10 @@ func NewOutputService5ProtocolTest(config *aws.Config) *OutputService5ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService5ProtocolTest{service}
 }
@@ -461,12 +450,22 @@ type metadataOutputService5TestShapeOutputService5TestCaseOperation1Input struct
 }
 
 type OutputService5TestShapeOutputShape struct {
-	ListMember []*string `type:"list" flattened:"true"`
+	ListMember []*OutputService5TestShapeSingleStruct `type:"list"`
 
 	metadataOutputService5TestShapeOutputShape `json:"-" xml:"-"`
 }
 
 type metadataOutputService5TestShapeOutputShape struct {
+	SDKShapeTraits bool `type:"structure"`
+}
+
+type OutputService5TestShapeSingleStruct struct {
+	Foo *string `type:"string"`
+
+	metadataOutputService5TestShapeSingleStruct `json:"-" xml:"-"`
+}
+
+type metadataOutputService5TestShapeSingleStruct struct {
 	SDKShapeTraits bool `type:"structure"`
 }
 
@@ -486,10 +485,10 @@ func NewOutputService6ProtocolTest(config *aws.Config) *OutputService6ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService6ProtocolTest{service}
 }
@@ -538,22 +537,12 @@ type metadataOutputService6TestShapeOutputService6TestCaseOperation1Input struct
 }
 
 type OutputService6TestShapeOutputShape struct {
-	Map map[string]*OutputService6TestShapeSingleStructure `type:"map"`
+	MapMember map[string][]*int64 `type:"map"`
 
 	metadataOutputService6TestShapeOutputShape `json:"-" xml:"-"`
 }
 
 type metadataOutputService6TestShapeOutputShape struct {
-	SDKShapeTraits bool `type:"structure"`
-}
-
-type OutputService6TestShapeSingleStructure struct {
-	Foo *string `locationName:"foo" type:"string"`
-
-	metadataOutputService6TestShapeSingleStructure `json:"-" xml:"-"`
-}
-
-type metadataOutputService6TestShapeSingleStructure struct {
 	SDKShapeTraits bool `type:"structure"`
 }
 
@@ -573,10 +562,10 @@ func NewOutputService7ProtocolTest(config *aws.Config) *OutputService7ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService7ProtocolTest{service}
 }
@@ -625,7 +614,7 @@ type metadataOutputService7TestShapeOutputService7TestCaseOperation1Input struct
 }
 
 type OutputService7TestShapeOutputShape struct {
-	Map map[string]*string `type:"map" flattened:"true"`
+	MapMember map[string]*time.Time `type:"map"`
 
 	metadataOutputService7TestShapeOutputShape `json:"-" xml:"-"`
 }
@@ -650,10 +639,10 @@ func NewOutputService8ProtocolTest(config *aws.Config) *OutputService8ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService8ProtocolTest{service}
 }
@@ -702,7 +691,7 @@ type metadataOutputService8TestShapeOutputService8TestCaseOperation1Input struct
 }
 
 type OutputService8TestShapeOutputShape struct {
-	Map map[string]*string `locationNameKey:"foo" locationNameValue:"bar" type:"map"`
+	StrType *string `type:"string"`
 
 	metadataOutputService8TestShapeOutputShape `json:"-" xml:"-"`
 }
@@ -727,10 +716,10 @@ func NewOutputService9ProtocolTest(config *aws.Config) *OutputService9ProtocolTe
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService9ProtocolTest{service}
 }
@@ -779,24 +768,14 @@ type metadataOutputService9TestShapeOutputService9TestCaseOperation1Input struct
 }
 
 type OutputService9TestShapeOutputShape struct {
-	Data *OutputService9TestShapeSingleStructure `type:"structure"`
+	AllHeaders map[string]*string `location:"headers" type:"map"`
 
-	Header *string `location:"header" locationName:"X-Foo" type:"string"`
+	PrefixedHeaders map[string]*string `location:"headers" locationName:"X-" type:"map"`
 
 	metadataOutputService9TestShapeOutputShape `json:"-" xml:"-"`
 }
 
 type metadataOutputService9TestShapeOutputShape struct {
-	SDKShapeTraits bool `type:"structure" payload:"Data"`
-}
-
-type OutputService9TestShapeSingleStructure struct {
-	Foo *string `type:"string"`
-
-	metadataOutputService9TestShapeSingleStructure `json:"-" xml:"-"`
-}
-
-type metadataOutputService9TestShapeSingleStructure struct {
 	SDKShapeTraits bool `type:"structure"`
 }
 
@@ -816,10 +795,10 @@ func NewOutputService10ProtocolTest(config *aws.Config) *OutputService10Protocol
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService10ProtocolTest{service}
 }
@@ -859,6 +838,16 @@ func (c *OutputService10ProtocolTest) OutputService10TestCaseOperation1(input *O
 
 var opOutputService10TestCaseOperation1 *aws.Operation
 
+type OutputService10TestShapeBodyStructure struct {
+	Foo *string `type:"string"`
+
+	metadataOutputService10TestShapeBodyStructure `json:"-" xml:"-"`
+}
+
+type metadataOutputService10TestShapeBodyStructure struct {
+	SDKShapeTraits bool `type:"structure"`
+}
+
 type OutputService10TestShapeOutputService10TestCaseOperation1Input struct {
 	metadataOutputService10TestShapeOutputService10TestCaseOperation1Input `json:"-" xml:"-"`
 }
@@ -868,13 +857,15 @@ type metadataOutputService10TestShapeOutputService10TestCaseOperation1Input stru
 }
 
 type OutputService10TestShapeOutputShape struct {
-	Stream []byte `type:"blob"`
+	Data *OutputService10TestShapeBodyStructure `type:"structure"`
+
+	Header *string `location:"header" locationName:"X-Foo" type:"string"`
 
 	metadataOutputService10TestShapeOutputShape `json:"-" xml:"-"`
 }
 
 type metadataOutputService10TestShapeOutputShape struct {
-	SDKShapeTraits bool `type:"structure" payload:"Stream"`
+	SDKShapeTraits bool `type:"structure" payload:"Data"`
 }
 
 // OutputService11ProtocolTest is a client for OutputService11ProtocolTest.
@@ -893,10 +884,10 @@ func NewOutputService11ProtocolTest(config *aws.Config) *OutputService11Protocol
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService11ProtocolTest{service}
 }
@@ -945,29 +936,13 @@ type metadataOutputService11TestShapeOutputService11TestCaseOperation1Input stru
 }
 
 type OutputService11TestShapeOutputShape struct {
-	Char *string `location:"header" locationName:"x-char" type:"character"`
-
-	Double *float64 `location:"header" locationName:"x-double" type:"double"`
-
-	FalseBool *bool `location:"header" locationName:"x-false-bool" type:"boolean"`
-
-	Float *float64 `location:"header" locationName:"x-float" type:"float"`
-
-	Integer *int64 `location:"header" locationName:"x-int" type:"integer"`
-
-	Long *int64 `location:"header" locationName:"x-long" type:"long"`
-
-	Str *string `location:"header" locationName:"x-str" type:"string"`
-
-	Timestamp *time.Time `location:"header" locationName:"x-timestamp" type:"timestamp" timestampFormat:"iso8601"`
-
-	TrueBool *bool `location:"header" locationName:"x-true-bool" type:"boolean"`
+	Stream []byte `type:"blob"`
 
 	metadataOutputService11TestShapeOutputShape `json:"-" xml:"-"`
 }
 
 type metadataOutputService11TestShapeOutputShape struct {
-	SDKShapeTraits bool `type:"structure"`
+	SDKShapeTraits bool `type:"structure" payload:"Stream"`
 }
 
 // OutputService12ProtocolTest is a client for OutputService12ProtocolTest.
@@ -986,10 +961,10 @@ func NewOutputService12ProtocolTest(config *aws.Config) *OutputService12Protocol
 
 	// Handlers
 	service.Handlers.Sign.PushBack(v4.Sign)
-	service.Handlers.Build.PushBack(restxml.Build)
-	service.Handlers.Unmarshal.PushBack(restxml.Unmarshal)
-	service.Handlers.UnmarshalMeta.PushBack(restxml.UnmarshalMeta)
-	service.Handlers.UnmarshalError.PushBack(restxml.UnmarshalError)
+	service.Handlers.Build.PushBack(restjson.Build)
+	service.Handlers.Unmarshal.PushBack(restjson.Unmarshal)
+	service.Handlers.UnmarshalMeta.PushBack(restjson.UnmarshalMeta)
+	service.Handlers.UnmarshalError.PushBack(restjson.UnmarshalError)
 
 	return &OutputService12ProtocolTest{service}
 }
@@ -1054,7 +1029,7 @@ type metadataOutputService12TestShapeOutputShape struct {
 func TestOutputService1ProtocolTestScalarMembersCase1(t *testing.T) {
 	svc := NewOutputService1ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResponse><Str>myname</Str><FooNum>123</FooNum><FalseBool>false</FalseBool><TrueBool>true</TrueBool><Float>1.2</Float><Double>1.3</Double><Long>200</Long><Char>a</Char><Timestamp>2015-01-25T08:00:00Z</Timestamp></OperationNameResponse>"))
+	buf := bytes.NewReader([]byte("{\"Str\": \"myname\", \"Num\": 123, \"FalseBool\": false, \"TrueBool\": true, \"Float\": 1.2, \"Double\": 1.3, \"Long\": 200, \"Char\": \"a\"}"))
 	req, out := svc.OutputService1TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
@@ -1063,8 +1038,8 @@ func TestOutputService1ProtocolTestScalarMembersCase1(t *testing.T) {
 	req.HTTPResponse.Header.Set("X-Foo", "abc")
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
@@ -1077,203 +1052,199 @@ func TestOutputService1ProtocolTestScalarMembersCase1(t *testing.T) {
 	assert.Equal(t, "abc", *out.ImaHeaderLocation)
 	assert.Equal(t, int64(200), *out.Long)
 	assert.Equal(t, int64(123), *out.Num)
+	assert.Equal(t, int64(200), *out.Status)
 	assert.Equal(t, "myname", *out.Str)
-	assert.Equal(t, time.Unix(1.4221728e+09, 0).UTC().String(), out.Timestamp.String())
 	assert.Equal(t, true, *out.TrueBool)
 
 }
 
-func TestOutputService1ProtocolTestScalarMembersCase2(t *testing.T) {
-	svc := NewOutputService1ProtocolTest(nil)
-
-	buf := bytes.NewReader([]byte("<OperationNameResponse><Str></Str><FooNum>123</FooNum><FalseBool>false</FalseBool><TrueBool>true</TrueBool><Float>1.2</Float><Double>1.3</Double><Long>200</Long><Char>a</Char><Timestamp>2015-01-25T08:00:00Z</Timestamp></OperationNameResponse>"))
-	req, out := svc.OutputService1TestCaseOperation2Request(nil)
-	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
-
-	// set headers
-	req.HTTPResponse.Header.Set("ImaHeader", "test")
-	req.HTTPResponse.Header.Set("X-Foo", "abc")
-
-	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
-	assert.NoError(t, req.Error)
-
-	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "a", *out.Char)
-	assert.Equal(t, 1.3, *out.Double)
-	assert.Equal(t, false, *out.FalseBool)
-	assert.Equal(t, 1.2, *out.Float)
-	assert.Equal(t, "test", *out.ImaHeader)
-	assert.Equal(t, "abc", *out.ImaHeaderLocation)
-	assert.Equal(t, int64(200), *out.Long)
-	assert.Equal(t, int64(123), *out.Num)
-	assert.Equal(t, "", *out.Str)
-	assert.Equal(t, time.Unix(1.4221728e+09, 0).UTC().String(), out.Timestamp.String())
-	assert.Equal(t, true, *out.TrueBool)
-
-}
-
-func TestOutputService2ProtocolTestBlobCase1(t *testing.T) {
+func TestOutputService2ProtocolTestBlobMembersCase1(t *testing.T) {
 	svc := NewOutputService2ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResult><Blob>dmFsdWU=</Blob></OperationNameResult>"))
+	buf := bytes.NewReader([]byte("{\"BlobMember\": \"aGkh\", \"StructMember\": {\"foo\": \"dGhlcmUh\"}}"))
 	req, out := svc.OutputService2TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
 	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "value", string(out.Blob))
+	assert.Equal(t, "hi!", string(out.BlobMember))
+	assert.Equal(t, "there!", string(out.StructMember.Foo))
 
 }
 
-func TestOutputService3ProtocolTestListsCase1(t *testing.T) {
+func TestOutputService3ProtocolTestTimestampMembersCase1(t *testing.T) {
 	svc := NewOutputService3ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResult><ListMember><member>abc</member><member>123</member></ListMember></OperationNameResult>"))
+	buf := bytes.NewReader([]byte("{\"TimeMember\": 1398796238, \"StructMember\": {\"foo\": 1398796238}}"))
 	req, out := svc.OutputService3TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
 	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "abc", *out.ListMember[0])
-	assert.Equal(t, "123", *out.ListMember[1])
+	assert.Equal(t, time.Unix(1.398796238e+09, 0).UTC().String(), out.StructMember.Foo.String())
+	assert.Equal(t, time.Unix(1.398796238e+09, 0).UTC().String(), out.TimeMember.String())
 
 }
 
-func TestOutputService4ProtocolTestListWithCustomMemberNameCase1(t *testing.T) {
+func TestOutputService4ProtocolTestListsCase1(t *testing.T) {
 	svc := NewOutputService4ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResult><ListMember><item>abc</item><item>123</item></ListMember></OperationNameResult>"))
+	buf := bytes.NewReader([]byte("{\"ListMember\": [\"a\", \"b\"]}"))
 	req, out := svc.OutputService4TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
 	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "abc", *out.ListMember[0])
-	assert.Equal(t, "123", *out.ListMember[1])
+	assert.Equal(t, "a", *out.ListMember[0])
+	assert.Equal(t, "b", *out.ListMember[1])
 
 }
 
-func TestOutputService5ProtocolTestFlattenedListCase1(t *testing.T) {
+func TestOutputService5ProtocolTestListsWithStructureMemberCase1(t *testing.T) {
 	svc := NewOutputService5ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResult><ListMember>abc</ListMember><ListMember>123</ListMember></OperationNameResult>"))
+	buf := bytes.NewReader([]byte("{\"ListMember\": [{\"Foo\": \"a\"}, {\"Foo\": \"b\"}]}"))
 	req, out := svc.OutputService5TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
 	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "abc", *out.ListMember[0])
-	assert.Equal(t, "123", *out.ListMember[1])
+	assert.Equal(t, "a", *out.ListMember[0].Foo)
+	assert.Equal(t, "b", *out.ListMember[1].Foo)
 
 }
 
-func TestOutputService6ProtocolTestNormalMapCase1(t *testing.T) {
+func TestOutputService6ProtocolTestMapsCase1(t *testing.T) {
 	svc := NewOutputService6ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResult><Map><entry><key>qux</key><value><foo>bar</foo></value></entry><entry><key>baz</key><value><foo>bam</foo></value></entry></Map></OperationNameResult>"))
+	buf := bytes.NewReader([]byte("{\"MapMember\": {\"a\": [1, 2], \"b\": [3, 4]}}"))
 	req, out := svc.OutputService6TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
 	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "bam", *out.Map["baz"].Foo)
-	assert.Equal(t, "bar", *out.Map["qux"].Foo)
+	assert.Equal(t, int64(1), *out.MapMember["a"][0])
+	assert.Equal(t, int64(2), *out.MapMember["a"][1])
+	assert.Equal(t, int64(3), *out.MapMember["b"][0])
+	assert.Equal(t, int64(4), *out.MapMember["b"][1])
 
 }
 
-func TestOutputService7ProtocolTestFlattenedMapCase1(t *testing.T) {
+func TestOutputService7ProtocolTestComplexMapValuesCase1(t *testing.T) {
 	svc := NewOutputService7ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResult><Map><key>qux</key><value>bar</value></Map><Map><key>baz</key><value>bam</value></Map></OperationNameResult>"))
+	buf := bytes.NewReader([]byte("{\"MapMember\": {\"a\": 1398796238, \"b\": 1398796238}}"))
 	req, out := svc.OutputService7TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
 	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "bam", *out.Map["baz"])
-	assert.Equal(t, "bar", *out.Map["qux"])
+	assert.Equal(t, time.Unix(1.398796238e+09, 0).UTC().String(), out.MapMember["a"].String())
+	assert.Equal(t, time.Unix(1.398796238e+09, 0).UTC().String(), out.MapMember["b"].String())
 
 }
 
-func TestOutputService8ProtocolTestNamedMapCase1(t *testing.T) {
+func TestOutputService8ProtocolTestIgnoresExtraDataCase1(t *testing.T) {
 	svc := NewOutputService8ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResult><Map><entry><foo>qux</foo><bar>bar</bar></entry><entry><foo>baz</foo><bar>bam</bar></entry></Map></OperationNameResult>"))
+	buf := bytes.NewReader([]byte("{\"foo\": \"bar\"}"))
 	req, out := svc.OutputService8TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
 	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "bam", *out.Map["baz"])
-	assert.Equal(t, "bar", *out.Map["qux"])
 
 }
 
-func TestOutputService9ProtocolTestXMLPayloadCase1(t *testing.T) {
+func TestOutputService9ProtocolTestSupportsHeaderMapsCase1(t *testing.T) {
 	svc := NewOutputService9ProtocolTest(nil)
 
-	buf := bytes.NewReader([]byte("<OperationNameResponse><Foo>abc</Foo></OperationNameResponse>"))
+	buf := bytes.NewReader([]byte("{}"))
 	req, out := svc.OutputService9TestCaseOperation1Request(nil)
+	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
+
+	// set headers
+	req.HTTPResponse.Header.Set("Content-Length", "10")
+	req.HTTPResponse.Header.Set("X-bam", "boo")
+	req.HTTPResponse.Header.Set("x-Foo", "bar")
+
+	// unmarshal response
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
+	assert.NoError(t, req.Error)
+
+	// assert response
+	assert.NotNil(t, out) // ensure out variable is used
+	assert.Equal(t, "10", *out.AllHeaders["Content-Length"])
+	assert.Equal(t, "boo", *out.AllHeaders["X-Bam"])
+	assert.Equal(t, "bar", *out.AllHeaders["X-Foo"])
+	assert.Equal(t, "boo", *out.PrefixedHeaders["Bam"])
+	assert.Equal(t, "bar", *out.PrefixedHeaders["Foo"])
+
+}
+
+func TestOutputService10ProtocolTestJSONPayloadCase1(t *testing.T) {
+	svc := NewOutputService10ProtocolTest(nil)
+
+	buf := bytes.NewReader([]byte("{\"Foo\": \"abc\"}"))
+	req, out := svc.OutputService10TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 	req.HTTPResponse.Header.Set("X-Foo", "baz")
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
@@ -1283,60 +1254,23 @@ func TestOutputService9ProtocolTestXMLPayloadCase1(t *testing.T) {
 
 }
 
-func TestOutputService10ProtocolTestStreamingPayloadCase1(t *testing.T) {
-	svc := NewOutputService10ProtocolTest(nil)
+func TestOutputService11ProtocolTestStreamingPayloadCase1(t *testing.T) {
+	svc := NewOutputService11ProtocolTest(nil)
 
 	buf := bytes.NewReader([]byte("abc"))
-	req, out := svc.OutputService10TestCaseOperation1Request(nil)
+	req, out := svc.OutputService11TestCaseOperation1Request(nil)
 	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
 
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
 	assert.NotNil(t, out) // ensure out variable is used
 	assert.Equal(t, "abc", string(out.Stream))
-
-}
-
-func TestOutputService11ProtocolTestScalarMembersInHeadersCase1(t *testing.T) {
-	svc := NewOutputService11ProtocolTest(nil)
-
-	buf := bytes.NewReader([]byte(""))
-	req, out := svc.OutputService11TestCaseOperation1Request(nil)
-	req.HTTPResponse = &http.Response{StatusCode: 200, Body: ioutil.NopCloser(buf), Header: http.Header{}}
-
-	// set headers
-	req.HTTPResponse.Header.Set("x-char", "a")
-	req.HTTPResponse.Header.Set("x-double", "1.5")
-	req.HTTPResponse.Header.Set("x-false-bool", "false")
-	req.HTTPResponse.Header.Set("x-float", "1.5")
-	req.HTTPResponse.Header.Set("x-int", "1")
-	req.HTTPResponse.Header.Set("x-long", "100")
-	req.HTTPResponse.Header.Set("x-str", "string")
-	req.HTTPResponse.Header.Set("x-timestamp", "Sun, 25 Jan 2015 08:00:00 GMT")
-	req.HTTPResponse.Header.Set("x-true-bool", "true")
-
-	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
-	assert.NoError(t, req.Error)
-
-	// assert response
-	assert.NotNil(t, out) // ensure out variable is used
-	assert.Equal(t, "a", *out.Char)
-	assert.Equal(t, 1.5, *out.Double)
-	assert.Equal(t, false, *out.FalseBool)
-	assert.Equal(t, 1.5, *out.Float)
-	assert.Equal(t, int64(1), *out.Integer)
-	assert.Equal(t, int64(100), *out.Long)
-	assert.Equal(t, "string", *out.Str)
-	assert.Equal(t, time.Unix(1.4221728e+09, 0).UTC().String(), out.Timestamp.String())
-	assert.Equal(t, true, *out.TrueBool)
 
 }
 
@@ -1350,8 +1284,8 @@ func TestOutputService12ProtocolTestStringCase1(t *testing.T) {
 	// set headers
 
 	// unmarshal response
-	restxml.UnmarshalMeta(req)
-	restxml.Unmarshal(req)
+	restjson.UnmarshalMeta(req)
+	restjson.Unmarshal(req)
 	assert.NoError(t, req.Error)
 
 	// assert response
