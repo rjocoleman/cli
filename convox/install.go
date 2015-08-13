@@ -20,9 +20,6 @@ import (
 	"github.com/convox/cli/stdcli"
 )
 
-var BootstrapUrl = "http://convox.s3.amazonaws.com/release/latest/bootstrap.json"
-var FormationUrl = "http://convox.s3.amazonaws.com/release/latest/formation.json"
-
 // https://docs.aws.amazon.com/general/latest/gr/rande.html#lambda_region
 var lambdaRegions = map[string]bool{"us-east-1": true, "us-west-2": true, "eu-west-1": true, "ap-northeast-1": true}
 
@@ -188,6 +185,12 @@ func cmdInstall(c *cli.Context) {
 	stackName := c.String("stack-name")
 
 	version := c.String("version")
+	if version == "" {
+		version = "latest"
+	}
+
+	var BootstrapUrl = fmt.Sprintf("http://convox.s3.amazonaws.com/release/%s/bootstrap.json", version)
+	var FormationUrl = fmt.Sprintf("http://convox.s3.amazonaws.com/release/%s/formation.json", version)
 
 	instanceCount := fmt.Sprintf("%d", c.Int("instance-count"))
 
