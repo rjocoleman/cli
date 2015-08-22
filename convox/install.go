@@ -104,11 +104,7 @@ func init() {
 
 func cmdInstall(c *cli.Context) {
 	region := c.String("region")
-	bootstrapRegion := region
-
-	if !lambdaRegions[region] {
-		bootstrapRegion = "us-east-1"
-	}
+	lambdaRegion := region
 
 	tenancy := "default"
 	instanceType := c.String("instance-type")
@@ -196,74 +192,81 @@ func cmdInstall(c *cli.Context) {
 
 	fmt.Println("Installing Convox...")
 
-	SNS := sns.New(&aws.Config{
-		Region:      region,
-		Credentials: credentials.NewStaticCredentials(access, secret, ""),
-	})
+	externalCustomTopic := ""
+	if !lambdaRegions[region] {
+		lambdaRegion = "us-east-1"
+		fmt.Printf("Lambda is not supported in %s, creating bootstrap in %s:\n", region, lambdaRegion)
 
-	snsResp, err := SNS.CreateTopic(&sns.CreateTopicInput{
-		Name: aws.String(stackName + "-bootstrap"),
-	})
+		SNS := sns.New(&aws.Config{
+			Region:      region,
+			Credentials: credentials.NewStaticCredentials(access, secret, ""),
+		})
 
-	if err != nil {
-		handleError("install", distinctId, err)
-		return
-	}
-	bootstrapTopic := *snsResp.TopicARN
+		snsResp, err := SNS.CreateTopic(&sns.CreateTopicInput{
+			Name: aws.String(stackName + "-bootstrap"),
+		})
 
-	BootstrapCloudFormation := cloudformation.New(&aws.Config{
-		Region:      bootstrapRegion,
-		Credentials: credentials.NewStaticCredentials(access, secret, ""),
-	})
+		if err != nil {
+			handleError("install", distinctId, err)
+			return
+		}
+		externalCustomTopic = *snsResp.TopicARN
 
-	bres, err := BootstrapCloudFormation.CreateStack(&cloudformation.CreateStackInput{
-		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
-		Parameters: []*cloudformation.Parameter{
-			&cloudformation.Parameter{ParameterKey: aws.String("Version"), ParameterValue: aws.String(version)},
-		},
-		StackName:   aws.String(stackName + "-bootstrap"),
-		TemplateURL: aws.String(BootstrapUrl),
-	})
+		BootstrapCloudFormation := cloudformation.New(&aws.Config{
+			Region:      lambdaRegion,
+			Credentials: credentials.NewStaticCredentials(access, secret, ""),
+		})
 
-	if err != nil {
-		handleError("install", distinctId, err)
-		return
-	}
+		bres, err := BootstrapCloudFormation.CreateStack(&cloudformation.CreateStackInput{
+			Capabilities: []*string{aws.String("CAPABILITY_IAM")},
+			Parameters: []*cloudformation.Parameter{
+				&cloudformation.Parameter{ParameterKey: aws.String("Version"), ParameterValue: aws.String(version)},
+			},
+			StackName:   aws.String(stackName + "-bootstrap"),
+			TemplateURL: aws.String(BootstrapUrl),
+		})
 
-	bootstrap, err := waitForCompletion(*bres.StackID, BootstrapCloudFormation, false)
+		if err != nil {
+			handleError("install", distinctId, err)
+			return
+		}
 
-	if err != nil {
-		handleError("install", distinctId, err)
-		return
-	}
+		bootstrap, err := waitForCompletion(*bres.StackID, BootstrapCloudFormation, false)
 
-	Lambda := lambda.New(&aws.Config{
-		Region:      bootstrapRegion,
-		Credentials: credentials.NewStaticCredentials(access, secret, ""),
-	})
+		if err != nil {
+			handleError("install", distinctId, err)
+			return
+		}
 
-	_, err = Lambda.AddPermission(&lambda.AddPermissionInput{
-		Action:       aws.String("lambda:invokeFunction"),
-		FunctionName: aws.String(bootstrap),
-		StatementID:  aws.String("StatementID"),
-		Principal:    aws.String("sns.amazonaws.com"),
-		SourceARN:    aws.String(bootstrapTopic),
-	})
+		Lambda := lambda.New(&aws.Config{
+			Region:      lambdaRegion,
+			Credentials: credentials.NewStaticCredentials(access, secret, ""),
+		})
 
-	if err != nil {
-		handleError("install", distinctId, err)
-		return
-	}
+		_, err = Lambda.AddPermission(&lambda.AddPermissionInput{
+			Action:       aws.String("lambda:invokeFunction"),
+			FunctionName: aws.String(bootstrap),
+			StatementID:  aws.String("StatementID"),
+			Principal:    aws.String("sns.amazonaws.com"),
+			SourceARN:    aws.String(externalCustomTopic),
+		})
 
-	_, err = SNS.Subscribe(&sns.SubscribeInput{
-		Protocol: aws.String("lambda"),
-		TopicARN: aws.String(bootstrapTopic),
-		Endpoint: aws.String(bootstrap),
-	})
+		if err != nil {
+			handleError("install", distinctId, err)
+			return
+		}
 
-	if err != nil {
-		handleError("install", distinctId, err)
-		return
+		_, err = SNS.Subscribe(&sns.SubscribeInput{
+			Protocol: aws.String("lambda"),
+			TopicARN: aws.String(externalCustomTopic),
+			Endpoint: aws.String(bootstrap),
+		})
+
+		if err != nil {
+			handleError("install", distinctId, err)
+			return
+		}
+		fmt.Println("Continuing normal install...")
 	}
 
 	access = strings.TrimSpace(access)
@@ -276,7 +279,7 @@ func cmdInstall(c *cli.Context) {
 		Credentials: credentials.NewStaticCredentials(access, secret, ""),
 	})
 
-	res, err := CloudFormation.CreateStack(&cloudformation.CreateStackInput{
+	stackInput := &cloudformation.CreateStackInput{
 		Capabilities: []*string{aws.String("CAPABILITY_IAM")},
 		Parameters: []*cloudformation.Parameter{
 			&cloudformation.Parameter{ParameterKey: aws.String("ClientId"), ParameterValue: aws.String(distinctId)},
@@ -287,11 +290,16 @@ func cmdInstall(c *cli.Context) {
 			&cloudformation.Parameter{ParameterKey: aws.String("Password"), ParameterValue: aws.String(password)},
 			&cloudformation.Parameter{ParameterKey: aws.String("Tenancy"), ParameterValue: aws.String(tenancy)},
 			&cloudformation.Parameter{ParameterKey: aws.String("Version"), ParameterValue: aws.String(version)},
-			&cloudformation.Parameter{ParameterKey: aws.String("CustomTopic"), ParameterValue: aws.String(bootstrapTopic)},
 		},
 		StackName:   aws.String(stackName),
 		TemplateURL: aws.String(FormationUrl),
-	})
+	}
+
+	if externalCustomTopic != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{ParameterKey: aws.String("ExternalCustomTopic"), ParameterValue: aws.String(externalCustomTopic)})
+	}
+
+	res, err := CloudFormation.CreateStack(stackInput)
 
 	if err != nil {
 		sendMixpanelEvent(fmt.Sprintf("convox-install-error"), err.Error())
