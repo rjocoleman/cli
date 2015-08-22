@@ -197,6 +197,9 @@ func cmdInstall(c *cli.Context) {
 
 	instanceCount := fmt.Sprintf("%d", c.Int("instance-count"))
 
+	access = strings.TrimSpace(access)
+	secret = strings.TrimSpace(secret)
+
 	fmt.Println("Installing Convox...")
 
 	externalCustomTopic := ""
@@ -275,9 +278,6 @@ func cmdInstall(c *cli.Context) {
 		}
 		fmt.Println("Continuing normal install...")
 	}
-
-	access = strings.TrimSpace(access)
-	secret = strings.TrimSpace(secret)
 
 	password := randomString(30)
 
