@@ -24,7 +24,7 @@ import (
 var lambdaRegions = map[string]bool{"us-east-1": true, "us-west-2": true, "eu-west-1": true, "ap-northeast-1": true}
 
 // https://docs.aws.amazon.com/general/latest/gr/rande.html#ecs_region
-var ecsRegions = map[string]bool{"us-east-1": true, "us-west-1": true, "us-west-2": true, "eu-west-1": true, "ap-northeast-1": true, "ap-southeast-2": true}
+var ecsRegions = map[string]bool{"us-east-1": true, "us-west-1": false, "us-west-2": true, "eu-west-1": true, "ap-northeast-1": true, "ap-southeast-2": true}
 
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
